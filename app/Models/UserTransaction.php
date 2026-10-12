@@ -6,17 +6,22 @@ use Illuminate\Database\Eloquent\Model;
 
 class UserTransaction extends Model
 {
+    protected $table = 'users_transactions';
     protected $fillable = [
         'user_id',
-        'transaction_type',
-        'amount',
-        'currency',
-        'note',
-        'internal_reference',
+        'transaction_reference',
         'transaction_date',
-        'from_bank',
-        'acount_number',
+        'currency',
+        'transaction_type',
+        'note',
+        'sender_account_number',
+        'reciever_account_number',
+        'reciever_bank_code',
+        'beneficiary_name',
+        'payment_type',
+        'charge_details',
         'status',
+        'amount',
     ];
 
 
@@ -24,4 +29,6 @@ class UserTransaction extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    
 }
