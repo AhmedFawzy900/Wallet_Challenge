@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class AcmeWebhookRequest extends FormRequest
 {
@@ -24,7 +25,7 @@ class AcmeWebhookRequest extends FormRequest
     {
         return [
             'account_number'=>['required','max:200','exists:users,account_number'],
-            'currency'=>['required','size:3'],
+            'currency'=>['required','size:3',Rule::in(['EGP'])],
             'transactions'=>['required','array']
         ];
     }

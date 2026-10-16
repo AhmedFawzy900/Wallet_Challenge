@@ -9,12 +9,14 @@ use App\Events\PaymentReceived;
 use App\Events\SubscriptionCancelled;
 use App\Events\UserCreated;
 use App\Models\BankTransaction;
+use App\Models\User;
 use DateTime;
 
 use function PHPSTORM_META\map;
 
 class WebhookProcessor
 {
+
     /**
      * Process a webhook event based on its type.
      * Each event type maps to a specific handler method.
@@ -23,8 +25,6 @@ class WebhookProcessor
     {
         Log::info("Processing webhook event: {$eventType}");
 
-        // Map event types to handler methods
-        // Add new events here as you need them
         match ($eventType) {
             'payment.succeeded' => $this->handlePaymentSucceeded($payload,$source),
             default => $this->handleUnknownEvent($eventType, $payload),
@@ -69,7 +69,26 @@ class WebhookProcessor
                     ]);
                     continue;
                 }
-                BankTransaction::create($transaction);
+                $user = User::where('account_number',$account_number)->first();
+                if ($user) {
+                    $userWallet = new UserWallet();
+                    $result = $userWallet->addBalance($user->id, (float)$finalTransactionsArray["amount"]);
+                    if(!$result) {
+                        Log::info('Failed to add balance to user wallet', [
+                            'user_id' => $user->id,
+                            'amount' => (float)$finalTransactionsArray["amount"]
+                        ]);
+                        continue;
+                    }
+                    BankTransaction::create($transaction);
+                }else{
+                    Log::info('User Not Found', [
+                        'account_number' => $account_number,
+                        'transaction' => $transaction
+                    ]);
+                }
+                
+
                 Log::info('Transaction Created', [
                     'transaction' => $transaction
                 ]);
@@ -120,6 +139,7 @@ class WebhookProcessor
         $delimiter = "//";
         $transactionArray = explode($delimiter,$transaction);
         //the result should be [156,50,202506159000001,20250615]
+        
         $date = $this->prepareDateFormat($transactionArray[2]);
         return [
             "amount"=>$transactionArray[0],

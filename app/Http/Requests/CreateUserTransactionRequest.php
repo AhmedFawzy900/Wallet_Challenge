@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class CreateUserTransactionRequest extends FormRequest
 {
@@ -24,7 +25,7 @@ class CreateUserTransactionRequest extends FormRequest
     {
         return [
             'amount' => ['required', 'numeric', 'min:0.01', 'max:100000000'],
-            'currency' => ['required', 'string', 'size:3'],
+            'currency' => ['required', 'string', 'size:3',Rule::in(['EGP'])],
             'reciever_account_number' => ['required', 'string', 'max:255'],
             'reciever_bank_code' => ['required', 'string', 'max:255'],
             'beneficiary_name' => ['required', 'string', 'max:255'],

@@ -8,7 +8,7 @@ use App\Http\Requests\PayTechWebhookRequest;
 use App\Services\WebhookProcessor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-
+use App\Helpers\Helper;
 class WebhookController extends Controller
 {
     private $processor;
@@ -21,16 +21,15 @@ class WebhookController extends Controller
          // Log the incoming webhook for debugging
         Log::info('Webhook received', [
             'headers' => $request->headers->all(),
-            'payload' => $request->all(),
+            'payload' => $request->validated(),
         ]);
         $eventType = 'payment.succeeded';
         $source = 'paytech' ;
         
-        // This ensures we respond quickly to the sender
-         dispatch(function () use ($request, $eventType,$source) {
-            $this->processor->process($eventType, $request->all(),$source);
-        })->afterResponse();
-        returnResponse('Webhook received',[],200);
+        
+        $this->processor->process($eventType, $request->validated(),$source);
+
+        return Helper::returnResponse('Webhook received',[],200);
     }
     public function handleAcme(AcmeWebhookRequest $request){
          // Log the incoming webhook for debugging
@@ -41,11 +40,9 @@ class WebhookController extends Controller
         $eventType = 'payment.succeeded';
         $source = 'acme' ;
 
-        dispatch(function () use ($request, $eventType,$source) {
-            $this->processor->process($eventType, $request->validated(),$source);
-        })->afterResponse();
+        $this->processor->process($eventType, $request->validated(),$source);
 
-        returnResponse('Webhook received',[],200);
+        return Helper::returnResponse('Webhook received',[],200);
     }
 
    

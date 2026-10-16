@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Helpers\Helper;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -32,7 +33,7 @@ class ValidateWebhookSignature
                 'ip' => $request->ip(),
             ]);
 
-            return response('Invalid signature', 401);
+           return  Helper::returnResponse('Invalid signature',[], 401);
         }
 
         return $next($request);

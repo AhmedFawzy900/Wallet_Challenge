@@ -4,9 +4,11 @@ namespace App\Http\Controllers\API;
 
 use App\Enums\TransactionsStatusEnum;
 use App\Enums\TransactionTypeEnum;
+use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateUserTransactionRequest;
 use App\Models\UserTransaction;
+use App\Services\UserWallet;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -16,6 +18,10 @@ use Spatie\ArrayToXml\ArrayToXml;
 
 class UserTransactionsController extends Controller
 {
+    private $wallet;
+    public function __construct(UserWallet $wallet) {
+        $this->wallet = $wallet;
+    }
     public function create(CreateUserTransactionRequest $request)
     {
         $user = Auth::user();
@@ -78,7 +84,13 @@ class UserTransactionsController extends Controller
         $payload['note'] = isset($payload['note']) && is_array($payload['note']) ? json_encode($payload['note']) : null;
        
         try {
-                 UserTransaction::create($payload);
+                $userWallet = new UserWallet();
+               $result = $userWallet->deductBalance($user->id, (float)$payload['amount']);
+               if(!$result) {
+                return Helper::returnResponse('Insufficient balance',[], 400);
+               }
+                UserTransaction::create($payload);
+                $this->wallet->deductBalance($user->id, $payload['amount']);
                 Log::info('User Transaction Created', [
                     'transaction' => $payload
                 ]);
@@ -86,7 +98,7 @@ class UserTransactionsController extends Controller
                     'transaction_reference' => $payload['transaction_reference'],
                     'xml' => $xml,
                 ];
-                returnResponse('Transaction created successfully',$data,201);
+                return Helper::returnResponse('Transaction created successfully',$data,201);
             } catch (\Throwable $th) {
                  Log::info('User Transaction Not created ', [
                     'error' => $th->getMessage(),
@@ -96,7 +108,7 @@ class UserTransactionsController extends Controller
                     'transaction_reference' => $payload['transaction_reference'],
                     'xml' => $xml,
                 ];
-                returnResponse($th->getMessage(),$data,401);
+                return Helper::returnResponse($th->getMessage(),$data,401);
                 
             }
         
