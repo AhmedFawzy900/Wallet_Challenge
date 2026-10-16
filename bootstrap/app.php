@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\JsonMiddleware;
+use App\Http\Middleware\ValidateWebhookSignature;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -14,6 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(JsonMiddleware::class);
+        $middleware->alias([
+            'webhook.validate' => ValidateWebhookSignature::class
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

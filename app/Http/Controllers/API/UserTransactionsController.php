@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Enums\TransactionsStatusEnum;
+use App\Enums\TransactionTypeEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CreateUserTransactionRequest;
 use App\Models\UserTransaction;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Ramsey\Uuid\Uuid;
 use Spatie\ArrayToXml\ArrayToXml;
 
@@ -33,8 +36,8 @@ class UserTransactionsController extends Controller
             'user_id' => $user->id,
             'transaction_date' => $date,
             'sender_account_number' => $user->account_number,
-            'transaction_type' => 'debit',
-            'status' => 'pending',
+            'transaction_type' => TransactionTypeEnum::Depit,
+            'status' => TransactionsStatusEnum::Pending,
         ]);
 
         //generate xml file from payload
@@ -73,12 +76,29 @@ class UserTransactionsController extends Controller
 
         //store transaction in database
         $payload['note'] = isset($payload['note']) && is_array($payload['note']) ? json_encode($payload['note']) : null;
-        UserTransaction::create($payload);
-
-        return response()->json([
-            'message' => 'Transaction created successfully',
-            'transaction_reference' => $payload['transaction_reference'],
-            'xml' => $xml,
-        ], 201);
+       
+        try {
+                 UserTransaction::create($payload);
+                Log::info('User Transaction Created', [
+                    'transaction' => $payload
+                ]);
+                $data=[
+                    'transaction_reference' => $payload['transaction_reference'],
+                    'xml' => $xml,
+                ];
+                returnResponse('Transaction created successfully',$data,201);
+            } catch (\Throwable $th) {
+                 Log::info('User Transaction Not created ', [
+                    'error' => $th->getMessage(),
+                    'transaction' => $payload
+                ]);
+                $data=[
+                    'transaction_reference' => $payload['transaction_reference'],
+                    'xml' => $xml,
+                ];
+                returnResponse($th->getMessage(),$data,401);
+                
+            }
+        
     }
 }

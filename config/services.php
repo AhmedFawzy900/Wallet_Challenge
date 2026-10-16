@@ -13,6 +13,10 @@ return [
     | a conventional file to locate the various service credentials.
     |
     */
+    'webhooks'=> [
+        'paytech_secret' => env('PAYTECH_SECRET_KEY'),
+        'acme_secret' => env('ACME_SECRET_KEY'),
+    ],
 
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
