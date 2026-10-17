@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 use App\Events\PaymentReceived;
 use App\Events\SubscriptionCancelled;
 use App\Events\UserCreated;
+use App\Helpers\Helper;
 use App\Models\BankTransaction;
 use App\Models\User;
 use DateTime;
@@ -39,6 +40,14 @@ class WebhookProcessor
         $currency = $payload['currency'];
         $finalTransactionsArray = [];
         foreach($transactions as $trans){
+            $result = $this->validateTransactionFormat($trans,$source);
+            if (!$result) {
+                Log::info('Skipping invalid transaction', [
+                    'transaction' => $trans,
+                    'source' => $source
+                ]);
+                continue;
+            }
             if ($source == 'paytech') {
                     $finalTransactionsArray = $this->extractTransactionDataForPayTech($trans);
             }elseif ($source == 'acme') {
@@ -156,5 +165,18 @@ class WebhookProcessor
         $dateMonth = substr($dateString, -4,-2);
         $date = $dateYear . '-' . $dateMonth . '-' . $dateDay;
         return $date;
+    }
+
+    protected function validateTransactionFormat($transaction,$source){
+       $result = Helper::TransactionPregMatch($transaction,$source);
+       
+       if (!$result) {
+            Log::info('Invalid transaction format', [
+                'transaction' => $transaction,
+                'source' => $source
+            ]);
+            
+        }
+       return $result;
     }
 }
